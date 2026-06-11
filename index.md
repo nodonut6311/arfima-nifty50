@@ -2,7 +2,17 @@
 layout: default
 title: ARFIMA vs GARCH - NIFTY 50 Volatility Research
 ---
-
+<style>
+body {
+  background-color: #0d1117;
+  color: #c9d1d9;
+}
+h1, h2, h3 { color: #58a6ff; }
+table { background-color: #161b22; border-color: #30363d; }
+td, th { border-color: #30363d; }
+a { color: #58a6ff; }
+code { background-color: #161b22; color: #79c0ff; }
+</style>
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
