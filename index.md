@@ -59,10 +59,7 @@ Can ARFIMA (Autoregressive Fractionally Integrated Moving Average) capture volat
 - **Asset:** NIFTY 50 Index (^NSEI)
 - **Period:** May 30, 2019 - May 30, 2026
 - **Observations:** 1,727 daily closing prices
-- **Returns:** 1,726 log returns, calculated as
-- $$
-- r_t = \log(P_t / P_{t-1})
-- $$
+- **Returns:** 1,726 log returns, calculated as $r_t = \log(P_t / P_{t-1})$
 
 ### Return Characteristics
 
