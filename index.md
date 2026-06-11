@@ -3,6 +3,9 @@ layout: default
 title: ARFIMA vs GARCH - NIFTY 50 Volatility Research
 ---
 
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
 # ARFIMA vs GARCH: Volatility Modeling for NIFTY 50
 
 **Comparing Long-Memory and GARCH Models for Risk Management**
