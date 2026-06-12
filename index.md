@@ -1,18 +1,8 @@
 ---
 layout: default
-title: ARFIMA vs GARCH - NIFTY 50 Volatility Research
+title: ARFIMA vs GARCH - NIFTY 50 Volatility Research 
 ---
-<style>
-body {
-  background-color: #0d1117;
-  color: #c9d1d9;
-}
-h1, h2, h3 { color: #58a6ff; }
-table { background-color: #161b22; border-color: #30363d; }
-td, th { border-color: #30363d; }
-a { color: #58a6ff; }
-code { background-color: #161b22; color: #79c0ff; }
-</style>
+
 <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
 <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
@@ -22,541 +12,375 @@ code { background-color: #161b22; color: #79c0ff; }
 
 *Research Project: May 2019 - May 2026 (7 years of NIFTY 50 data)*
 
----
+--- 
 
-## Table of Contents
-
-1. [Executive Summary](#executive-summary)
-2. [Data & Volatility](#data--volatility-estimation)
-3. [Long-Memory Testing](#testing-for-long-memory)
-4. [ARFIMA Specification](#arfima-model-specification)
-5. [Model Comparison](#model-comparison--results)
-6. [Out-of-Sample Forecasting](#out-of-sample-forecasting)
-7. [Value at Risk Analysis](#value-at-risk-var-analysis)
-8. [Hedging Recommendations](#hedging-recommendations)
-9. [Key Takeaways](#key-takeaways)
-
----
 
 ## Executive Summary
 
-### The Question
-Can ARFIMA (Autoregressive Fractionally Integrated Moving Average) capture volatility dynamics better than GARCH for the NIFTY 50 index?
+### Abstract
 
-### The Answer
-**YES. ARFIMA(3, 0.1, 0) is significantly superior to GARCH(1,1).**
+This study analyzes seven years of NIFTY 50 index data (May 2019–May 2026) to estimate and model volatility dynamics. Beyond volatility estimation alone, this research conducts a comprehensive comparative analysis of two volatility models: ARFIMA and GARCH(1,1). The study emphasizes the critical importance of accounting for long-memory persistence inherent in equity index data during volatility estimation, and leverages these insights to derive practical hedging strategies for portfolio managers and financial institutions.
 
-### Key Findings
+### Motivation and Need for Study
 
-| Metric | ARFIMA | GARCH | Winner |
-|--------|--------|-------|--------|
-| **AIC** | -20,337 | -781 | ✓ ARFIMA |
-| **BIC** | -20,310 | -759 | ✓ ARFIMA |
-| **Log-Likelihood** | 10,173.6 | 394.3 | ✓ ARFIMA |
-| **MAE (forecast)** | 0.00408 | 0.00480 | ✓ ARFIMA (15% better) |
-| **RMSE (forecast)** | 0.00437 | 0.00547 | ✓ ARFIMA (20% better) |
+GARCH(1,1) models have become the industry standard for volatility estimation, while long-memory models such as ARFIMA remain underutilized in practice. The fundamental difference between these approaches lies in their treatment of volatility persistence: GARCH models fail to capture the long-memory structure characteristic of equity index volatility, whereas ARFIMA captures this persistence through fractional integration rather than integer-order differencing. 
 
-### Why It Matters
-
-- **NIFTY 50 volatility has long-memory** (shocks persist 5-10 days, not 1 day)
-- **ARFIMA's d = 0.10 captures this**; GARCH at unit root (α+β=1.0) misses it
-- **Risk management implication:** ARFIMA gives 18% higher VaR (more conservative, better for hedging)
-- **Practical:** Weekly rebalancing with ARFIMA vs. daily with GARCH (cost savings)
+This distinction is consequential because volatility autocorrelation decays hyperbolically in equity returns, not exponentially as GARCH assumes. Consequently, standard GARCH models systematically underestimate the duration and magnitude of volatility shocks. This study evaluates both models across two empirically relevant use cases: intra-day volatility estimation and medium-term forecasting (3–10 days), demonstrating the conditions under which each model provides superior risk management guidance.
 
 ---
 
-## Data & Volatility Estimation
+## Data and Volatility Estimation
 
 ### Data Source
 
-- **Asset:** NIFTY 50 Index (^NSEI)
-- **Period:** May 30, 2019 - May 30, 2026
-- **Observations:** 1,727 daily closing prices
-- **Returns:** 1,726 log returns, calculated as $$r_t = \log(P_t / P_{t-1})$$
+Daily closing prices for the NIFTY 50 index were obtained using the yfinance Python package (ticker: ^NSEI) for the period from May 30, 2019 to May 30, 2026. This period yielded 1,727 daily closing price observations, from which 1,726 return values were computed using the logarithmic return formula:
+
+$$r_t = \log(P_t / P_{t-1})$$
+
+where $P_t$ denotes the closing price at time $t$.
+
+### Why Model Returns Rather Than Index Levels?
+
+Volatility estimation models for equity indices target returns rather than index levels. Index price data are inherently non-stationary, exhibiting significant noise and secular trends incompatible with the stationarity assumptions required by estimation techniques such as ARMA, ARIMA, and ARFIMA. In contrast, log returns are approximately stationary, possessing a fixed mean and variance over the sample period, making them suitable for conditional volatility modeling.
 
 ### Return Characteristics
 
-- **Mean:** 0.0394% daily (9.91% annualized)
-- **Std Dev:** 1.1302% daily (17.94% annualized)
-- **Skewness:** -1.49 (left-tailed, crashes > rallies)
-- **Excess Kurtosis:** 21.37 (extreme fat tails, 37× more extreme events than normal)
-- **Jarque-Bera:** 33,291 (p=0.00, **non-normal**)
+#### Return Statistics
 
-**Interpretation:** Returns are severely non-normal with fat tails. This is why volatility modeling is critical.
+| Statistic | Value | Annualized |
+|-----------|-------|-----------|
+| Mean | 0.000393 | 9.91% |
+| Std Dev | 0.011302 | 17.94% |
+| Minimum | -0.139038 | - |
+| Maximum | 0.084003 | - |
+| Skewness | -1.4886 | - |
+| Excess Kurtosis | 21.3742 | - |
+
+#### Normality Testing
+
+| Test | Statistic | p-value | Result |
+|------|-----------|---------|--------|
+| Jarque-Bera | 33,291.38 | 0.000000 | Reject H₀ |
+
+**Interpretation:** Returns exhibit severe departures from normality, with strong statistical evidence against the null hypothesis of normality.
+
+![Histogram with KDE overlay of NIFTY 50 returns](images/g1.png)
+
+
+### Inference from Return Characteristics
+
+- **1.** The negative skewness of -1.49 indicates a left-skewed distribution, meaning the return distribution has a longer left tail. This implies that extreme negative returns (market crashes) are more frequent than extreme positive returns of equivalent magnitude, a characteristic pattern in equity indices during periods of market stress.
+
+- **2.** The excess kurtosis of 21.37 reflects pronounced fat tails in the return distribution. Standard normal returns would have kurtosis of 3; the observed excess kurtosis of 21.37 indicates approximately 37 times greater likelihood of extreme events relative to a normal distribution. This fat-tail property is critical for accurate tail risk estimation and justifies the use of sophisticated volatility models.
+
+- **3.** The Jarque-Bera test statistic of 33,291.38 with p-value effectively zero provides overwhelming evidence against normality. This result validates the necessity of volatility modeling rather than relying on constant-variance assumptions.
+  
+***The non-normality, combined with pronounced skewness and kurtosis, demonstrates that NIFTY 50 returns require conditional volatility models capable of capturing time-varying risk dynamics and tail risk behavior.***
+
 
 ---
+## EWMA Volatility Calculation
 
-### EWMA Volatility Calculation
+### Need for EWMA Volatility
 
-**Formula:**
+The use of squared returns as a volatility proxy proved inadequate due to excessive noise and failure to incorporate historical information effectively. While simple moving averages (MA) represent an alternative approach, they assign equal weight to all observations, a methodology now considered outdated. 
+
+To address these limitations while capturing conditional volatility dynamics, the Exponentially Weighted Moving Average (EWMA) approach was employed. This method assigns greater weight to recent returns while systematically downweighting historical observations, thereby capturing volatility clustering inherent in equity index data.
+
+### Recursive Formulation
+
+The recursive EWMA formula is:
+
 $$\sigma_t^2 = \lambda \sigma_{t-1}^2 + (1-\lambda) r_t^2$$
 
-Where:
-- $\sigma_t$ = volatility at time t
-- $r_t$ = log return at time t  
-- $\lambda$ = 0.94 (RiskMetrics standard)
+where:
+- $\sigma_t$ = conditional volatility at time $t$
+- $r_t$ = log return at time $t$
+- $\lambda$ = 0.94 (RiskMetrics standard decay factor)
 
-**Why EWMA with λ = 0.94?**
+The equivalent non-recursive representation reveals the exponential decay structure:
 
-| Alternative | Why Not | Decision |
-|-------------|---------|----------|
-| Squared returns | Too noisy, ignores history | ❌ |
-| Simple MA | Equal weighting outdated | ❌ |
-| EWMA (λ=0.94) | Recent shocks matter more, smooth | ✓ **SELECTED** |
-| GARCH | Evaluated separately for comparison | ✓ |
+$$\sigma_t^2 = (1-\lambda) \sum_{i=0}^{\infty} \lambda^i r_{t-i}^2$$
 
-**Result:** EWMA volatility ranges from **0.66% to 7.2%** daily
+This formulation demonstrates that each historical squared return is weighted by $\lambda^i$, creating exponential decay: recent shocks (small $i$) receive substantial weight, while distant observations (large $i$) decay geometrically. The decay rate $\lambda = 0.94$ ensures that information from approximately 20 trading days ago retains approximately 25% of its original weight.
 
----
+![Plotting Calculated EWMA Volatility](images/g2.png)
+<!--
+### Rationale for EWMA Selection
 
-## Testing for Long-Memory
+The EWMA specification addresses the competing objectives of noise reduction and information preservation. By assigning weights that decay exponentially, it captures volatility clustering (periods of high volatility tend to follow periods of high volatility) while remaining computationally efficient relative to more complex specifications. The RiskMetrics standard of $\lambda = 0.94$ has been extensively validated in practice and represents a parsimonious choice that balances responsiveness to recent shocks with stability.
+-->
+
+***EWMA volatility estimates for the NIFTY 50 sample period range from ***0.44% to 4.88%*** on a daily basis, with notable spikes coinciding with periods of market stress (notably March-May 2020 during the COVID-19 pandemic).***
+
+----
+## Testing for Stationarity and Long Memory
 
 ### Augmented Dickey-Fuller (ADF) Test
 
-**Hypothesis:**
-- H₀: Series has unit root (non-stationary)
-- H₁: Series is stationary
+The ADF test is conducted to determine whether a time series exhibits stationarity (fluctuating around a fixed mean) or non-stationarity (possessing a unit root). This test is essential because stationarity constitutes a prerequisite for valid estimation of ARMA-family models, including ARFIMA specifications.
 
-**Result:**
-- ADF Statistic: -4.348
-- p-value: **0.0004** ← Reject H₀
-- **Conclusion:** Volatility is STATIONARY ✓
+#### Hypotheses
 
-**Decision:** Why test stationarity?
-- ARFIMA requires stationarity (d < 0.5)
-- Non-stationary series = invalid ARFIMA fit
-- ADF confirms our d estimate will be valid
+- **Null Hypothesis (H₀):** Unit root present (series is non-stationary)
+- **Alternative Hypothesis (H₁):** No unit root (series is stationary)
 
----
+#### Results
 
-### ACF/PACF Analysis
 
-**ACF Results:**
-- **60 out of 60 lags significant** (outside 95% confidence band)
-- Hyperbolic decay pattern (not exponential)
+| Statistic | Value |
+|-----------|-------|
+| **Test Statistic** | -4.3477 |
+| **p-value** | 0.000367 |
+| **Lags Used** | 15 |
+| **Observations** | 1,710 |
+| **1% Critical Value** | -3.4342 |
+| **5% Critical Value** | -2.8632 |
+| **10% Critical Value** | -2.5677 |
 
-**Decision:** Why 60 lags?
-- Standard for persistence testing
-- Shows extreme autocorrelation
-- Hyperbolic decay → long-memory (not GARCH!)
 
-**PACF Results:**
-- Spike at lag 1 only (AR(1) dominant)
-- Suggests AR component needed
-
-**Interpretation:** ACF pattern is **incompatible with GARCH** (exponential decay). ARFIMA's fractional integration better explains the slow decay.
+**Decision:** With test statistic of -4.3477 and p-value of 0.000367 (p < 0.05), we ***reject the null hypothesis***. The NIFTY 50 volatility series is ***stationary***, satisfying a fundamental requirement for ARFIMA modeling.
 
 ---
 
-### Hurst Exponent (R/S Analysis)
+### Autocorrelation Function (ACF) and Partial Autocorrelation Function (PACF)
 
-**Formula:**
+The **Autocorrelation Function (ACF)** measures the correlation between observations at different lags, revealing the degree of linear dependence in the time series.
 
-$$H = \lim_{n \to \infty} \frac{\log(R/S)}{\log(n)}$$
+The **Partial Autocorrelation Function (PACF)** measures the correlation between observations at specific lags after removing the effects of intermediate lags, isolating direct dependencies.
 
-Where R/S is the rescaled range statistic.
+A defining characteristic of long-memory processes is the slow, hyperbolic decay of the ACF. Unlike exponential decay (as in GARCH specifications), this gradual decay pattern provides visual evidence of volatility persistence incompatible with standard models, thereby justifying the use of ARFIMA.
 
-**Why R/S Analysis?**
-- Model-free (no ARFIMA assumption)
-- Bootstrap validates results (1,000 resamples)
-- Catches outliers in point estimates
-- Industry standard for long-memory detection
+#### ACF/PACF Plots
 
-**Results:**
 
-| Estimate | Value | Interpretation |
-|----------|-------|---|
-| Point estimate H | 0.9801 | Extreme! (potential outlier) |
-| Bootstrap CI | [0.5459, 0.6282] | **Use this** (robust) |
-| Bootstrap center | 0.60 | Typical value across resamples |
+![ACF and PACF plots of NIFTY 50 EWMA volatility](images/g3.png)
 
-**Decision: Use bootstrap, not point estimate?**
+#### Interpretation from the Plots
 
-The point estimate (H=0.9801) is an outlier from R/S analysis being sensitive to lag choice. Bootstrap resampling (1,000 times) revealed the typical H ≈ 0.60.
+- **95% Confidence Band:** ±0.0472
+- **Significant ACF Lags (of 60 tested):** 60 out of 60
+- **ACF Pattern:** Hyperbolic decay (characteristic of long-memory processes)
+- **PACF Pattern:** Dominant spike at lag 1, indicating AR(1) structure
 
-**Why this matters:** Bootstrap showed that **H=0.98 is unreliable**, while H=0.60 is robust.
-
-**Interpretation:**
-$$d = H - 0.5 = 0.60 - 0.5 = 0.10$$
-
-This gives us our fractional integration parameter.
+***The fact that all 60 tested lags exceed the 95% confidence band demonstrates extreme autocorrelation inconsistent with GARCH's exponential decay assumption. This finding provides empirical justification for employing ARFIMA to capture volatility persistence.***
 
 ---
 
+### Hurst Exponent via Rescaled Range (R/S) Analysis
+
+The Hurst exponent $H$ quantifies the degree of long-range dependence in a time series and serves as a definitive metric for assessing whether long-memory models such as ARFIMA are appropriate.
+
+**Interpretation Guidelines:**
+- $H > 0.5$ implies slowly decaying autocorrelations and long-memory persistence
+- $H = 0.5$ corresponds to short-memory processes (white noise, Brownian motion)
+- $H < 0.5$ indicates anti-persistence (mean-reverting, oscillatory behavior)
+
+#### Rescaled Range (R/S) Methodology
+
+The R/S analysis proceeds through the following steps:
+
+1. Select various time window lengths $n$
+2. Partition the data into non-overlapping blocks of length $n$
+3. Calculate the ratio $R(n)/S(n)$ for each block, where $R(n)$ is the range and $S(n)$ is the standard deviation
+4. Compute the average $R/S$ ratio across all blocks
+
+This process is repeated for multiple window lengths, yielding an empirical relationship that reveals long-memory structure.
+
+#### Relation Formula
+
+The relationship between rescaled range and window length follows:
+
+$$\frac{R(n)}{S(n)} = C n^{H}$$
+$$\log(R/S) = \log C + H \log n$$
+
+where the slope of the regression line equals the Hurst exponent $H$.
+
+#### R/S Analysis Plot
+
+![Log-log plot of rescaled range analysis showing Hurst exponent estimation](images/g4.png)
+
+
+#### Results and Interpretation
+
+| Estimate | Value |
+|----------|-------|
+| Point Estimate (H) | 0.9801 |
+| Bootstrap 95% CI | [0.5459, 0.6282] |
+| Bootstrap Center | 0.6000 |
+| Standard Error | 0.0211 |
+
+**Critical Finding:** The point estimate of $H = 0.9801$ emerged as a statistical outlier, likely reflecting the sensitivity of R/S analysis to lag length selection. Bootstrap resampling (1,000 iterations) revealed that the robust estimate of $H$ centers at approximately 0.60, with 95% confidence interval [0.5459, 0.6282]. Notably, all values within this interval satisfy $H > 0.5$, providing strong evidence of long-memory persistence.
+
+----
+## Fractional Integration Parameter (d) Estimation for ARFIMA
+
+Using the bootstrap-validated Hurst exponent estimate of $H \approx 0.60$, the fractional integration parameter for ARFIMA is derived through the relationship:
+
+$$d = H - 0.5$$
+
+$$d = 0.60 - 0.5 = 0.10$$
+
+This result is highly significant for model specification. The derived parameter $d = 0.10$ satisfies two critical constraints: (1) the stationarity requirement ($d < 0.5$) ensuring mean-reversion properties, and (2) the long-memory condition ($d > 0$) confirming volatility persistence. The bootstrap confidence interval [0.5459, 0.6282] translates to a 95% CI for $d$ of [0.0459, 0.1282], providing additional confidence in the estimate.
+
+This theoretically justified parameter choice supports the ARFIMA(p, 0.1, q) specification for NIFTY 50 volatility. The value $d = 0.10$ ***indicates moderate long-memory persistence: volatility shocks persist for approximately 5-10 trading days before dissipating, a duration substantially longer than GARCH's one-period decay.***
+
+This finding fundamentally distinguishes ARFIMA from standard exponential-decay models and validates its use for medium-term risk management.
+
+-----
 ## ARFIMA Model Specification
 
-### Fractional Differencing Operator
+The key innovation of ARFIMA is the **fractional differencing operator**, which generalizes standard integer differencing to non-integer powers:
 
-The key innovation of ARFIMA is the **fractional differencing operator**:
+$$\left(1-B\right)^d = \sum_{k=0}^{\infty} \binom{d}{k}(-1)^k B^k$$
 
-$$(1-B)^d = \sum_{k=0}^{\infty} \binom{d}{k}(-1)^k B^k$$
-
-**Component breakdown:**
-- $B$ = backshift operator (shifts time by 1 period)
+**Component Breakdown:**
+- $B$ = backshift operator (shifts observations back by one period)
 - $(1-B)$ = first difference operator
-- $(1-B)^d$ = fractional application (non-integer power)
-- Weights decay: $w_k \approx O(k^{d-1})$
-
-**Key constraint:** $d \in (0, 0.5)$ ensures:
-- $d > 0$ → Long-memory present (slow decay)
-- $d < 0.5$ → Series remains stationary (mean-reverting)
-
-### ARFIMA(p, d, q) Model
-
-**Specification:**
-
-$$(1-B)^d \sigma_t = \mu + \phi_1(1-B)^d\sigma_{t-1} + \phi_2(1-B)^d\sigma_{t-2} + \phi_3(1-B)^d\sigma_{t-3} + \epsilon_t$$
-
-Where:
-- $\sigma_t$ = volatility at time t
-- $d = 0.10$ (fractional integration parameter)
-- $\phi_1, \phi_2, \phi_3$ = AR coefficients
-- $\epsilon_t$ = white noise residuals
-
-**Why ARFIMA(3, 0.1, 0)?**
-
-| Component | Choice | Reason |
-|-----------|--------|--------|
-| **d = 0.10** | From Hurst exponent | Stationary (d<0.5) + long-memory (d>0) |
-| **p = 3** | AIC/BIC grid search | Best fit on lag selection |
-| **q = 0** | AIC/BIC grid search | No MA terms needed |
-
-### Lag Selection (AIC/BIC)
-
-**Grid Search:** Tested p, q ∈ {0,1,2,3}
-
-**Method:** 
-1. Fractionally difference data: $(1-B)^{0.1} \sigma_t$
-2. Fit ARIMA(p, 0, q) on differenced data
-3. This is equivalent to ARFIMA(p, 0.1, q) on original
-
-**Decision:** Why fractional differencing first?
-- `statsmodels` ARIMA doesn't support fractional d
-- Manual fractional differencing + ARIMA on differenced = equivalent to full ARFIMA
-- Simpler, more transparent, easier to audit
-
-**Results:**
-
-| Model | AIC | BIC | Selected |
-|-------|-----|-----|----------|
-| ARIMA(0,0,0) | -20,150 | -20,140 | |
-| ARIMA(1,0,0) | -20,200 | -20,180 | |
-| ARIMA(2,0,0) | -20,280 | -20,250 | |
-| **ARIMA(3,0,0)** | **-20,337** | **-20,310** | ✓ **SELECTED** |
-| ARIMA(3,0,1) | -20,335 | -20,300 | |
-
-BIC preferred (more parsimonious) → **ARFIMA(3, 0.1, 0)**
+- $(1-B)^d$ = fractional power application, enabling non-integer order of integration
+- Weights decay: $w_k \approx O(k^{d-1})$, exhibiting hyperbolic rather than exponential decay
 
 ---
 
-## Model Comparison & Results
+### Lag Selection via Information Criteria (AIC and BIC)
 
-### ARFIMA Parameter Estimates
+The ARFIMA(p, d, q) specification requires selection of AR order $p$ and MA order $q$. This is accomplished through information-theoretic criteria that balance goodness-of-fit against model complexity.
 
-**Fitted Model:**
+**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $\text{AIC} = -2\log L + 2k$, where $L$ is likelihood and $k$ is parameter count.
 
-$$\text{ARFIMA}(3, 0.1, 0): \sigma_t = 0.0048 + 0.9753\sigma_{t-1} + 0.1146\sigma_{t-2} - 0.1049\sigma_{t-3} + \epsilon_t$$
+**Bayesian Information Criterion (BIC)** applies a stricter penalty for additional parameters, incorporating sample size: $\text{BIC} = -2\log L + k\log(n)$, where $n$ is observations. BIC penalizes parametric complexity more heavily than AIC, favoring parsimony.
 
-| Parameter | Estimate | Std. Error | t-statistic | p-value | Significant |
-|-----------|----------|------------|-------------|---------|-------------|
-| Constant | 0.00476 | 0.00142 | 3.36 | 0.001 | ✓ Yes |
-| AR(1) $\phi_1$ | 0.97534 | 0.01108 | 88.01 | 0.000 | ✓ Yes |
-| AR(2) $\phi_2$ | 0.11462 | 0.01142 | 10.04 | 0.000 | ✓ Yes |
-| AR(3) $\phi_3$ | -0.10487 | 0.00776 | -13.53 | 0.000 | ✓ Yes |
+#### Grid Search and Results
 
-**Interpretation:**
-- AR(1) dominates (0.975): Strong mean-reversion to past volatility
-- AR(2) positive (0.115): Two-step memory
-- AR(3) negative (-0.105): Three-step oscillation
-- All highly significant (p < 0.001)
+A comprehensive grid search over $p, q \in \{0, 1, 2, 3, 4, 5\}$ was conducted, evaluating 36 candidate models. The fractional differencing parameter $d = 0.10$ was held fixed based on the Hurst exponent analysis.
+
+**Optimal Models Identified:**
+
+| Criterion | Model | AIC | BIC |
+|-----------|-------|-----|-----|
+| **AIC** | ARIMA(4, 0, 3) | -20,351.50 | -20,302.42 |
+| **BIC** | ARIMA(3, 0, 0) | -20,337.27 | -20,310.00 |
+
+#### Model Selection Rationale
+
+The ARIMA(3, 0, 0) specification was selected based on the BIC criterion. While AIC favors the more complex ARIMA(4, 0, 3) model, BIC explicitly accounts for parametric economy by imposing a logarithmic penalty proportional to sample size. Given the large sample (n = 1,726), BIC more appropriately penalizes the addition of the MA(3) terms in the AIC-preferred model. The ARIMA(3, 0, 0) specification achieves only marginally lower AIC (-20,337 vs. -20,352) while reducing parameters from 7 to 4, yielding the parsimonious ARFIMA(3, 0.1, 0) model.
+
+#### Implementation: Fractional Differencing
+
+Lag selection was performed by applying fractional differencing to the EWMA volatility series prior to ARMA parameter estimation. This approach was necessary as mainstream Python libraries (e.g., statsmodels) lack native support for fractional $d$ parameter estimation in ARFIMA models. The fractional differencing transformation is:
+
+$$\left(1-B\right)^{0.1} \sigma_t = \sigma_t - 0.1\sigma_{t-1} + \frac{0.1 \times (-0.9)}{2}\sigma_{t-2} - \frac{0.1 \times (-0.9) \times (-1.9)}{6}\sigma_{t-3} + \cdots$$
+
+Following fractional differencing, standard ARIMA(p, 0, q) estimation was applied to the transformed series. This procedure is equivalent to full ARFIMA(p, 0.1, q) modeling on the original volatility and provides transparency in the estimation process. This approach determined the ARFIMA(3, 0.1, 0) specification.
 
 ---
 
-### GARCH(1,1) Specification
+### Fitted Model Statistics and Parameter Estimates
 
-**Model:**
+**Fitted ARFIMA(3, 0.1, 0) Model:**
+
+$$\sigma_t = 0.0048 + 0.9753\sigma_{t-1} + 0.1146\sigma_{t-2} - 0.1049\sigma_{t-3} + \epsilon_t$$
+
+#### Parameter Estimates
+
+| Parameter | Estimate | Std. Error | t-statistic | p-value | Significance |
+|-----------|----------|------------|-------------|---------|---|
+| Constant | 0.00476 | 0.00142 | 3.36 | 0.001 | ✓ |
+| AR(1) $\phi_1$ | 0.97534 | 0.01108 | 88.01 | 0.000 | ✓ |
+| AR(2) $\phi_2$ | 0.11462 | 0.01142 | 10.04 | 0.000 | ✓ |
+| AR(3) $\phi_3$ | -0.10487 | 0.00776 | -13.53 | 0.000 | ✓ |
+
+#### Parameter Interpretation
+The AR(1) coefficient $\phi_1 = 0.9753$ indicates strong persistence: 97.5% of past volatility carries forward. Combined with the fractional integration parameter $d = 0.10$, this generates the slow ACF decay characteristic of long-memory processes.
+
+The positive AR(2) term $\phi_2 = 0.1146$ captures secondary persistence effects (two-step memory), while the negative AR(3) coefficient $\phi_3 = -0.1049$ introduces oscillatory behavior that prevents overshooting. All parameters are highly significant (p < 0.001), validating the ARFIMA(3, 0.1, 0) specification.
+
+------
+## GARCH(1,1)
+
+**Model Specification:**
 
 $$\sigma_t^2 = \omega + \alpha r_{t-1}^2 + \beta \sigma_{t-1}^2$$
 
-**Estimated Parameters:**
-- $\omega$ = constant volatility
-- $\alpha$ = ARCH (response to recent shocks)
-- $\beta$ = GARCH (persistence from past volatility)
-
-**Decision:** Why GARCH(1,1)?
-- Industry standard (most common)
-- Simplest meaningful GARCH spec
-- Fair comparison baseline
-
-**Result:** α + β = 1.0000 (unit root!)
-- GARCH believes volatility is non-stationary
-- ADF test showed it's stationary
-- **ARFIMA gets this right with d=0.10**
-
----
-
-### In-Sample Fit Comparison
-
-**Log-Likelihood & Information Criteria:**
-
-| Metric | ARFIMA(3,0.1,0) | GARCH(1,1) | Difference |
-|--------|-----------------|-----------|-----------|
-| **Log-Likelihood** | 10,173.64 | 394.29 | +9,779 |
-| **AIC** | -20,337.27 | -780.58 | -19,557 |
-| **BIC** | -20,310.00 | -758.77 | -19,551 |
-
-**Decision:** Why these metrics matter?
-- Log-likelihood: ARFIMA's 10,173 vs GARCH's 394 = **25× better fit**
-- AIC: Penalizes parameters; ARFIMA still wins (4 vs 3 params)
-- BIC: Stricter penalty; ARFIMA still wins massively
-
-**Conclusion:** ARFIMA vastly superior in-sample fit
-
----
-
-## Out-of-Sample Forecasting
-
-### Rolling Window Setup
-
-**Data Split:**
-- Training: 1,526 observations (88%)
-- Testing: 200 observations (12%) - focusing on recent volatility spike
-- Refit frequency: Every 20 days
-- Forecast horizon: 1-step ahead
-
-**Decision:** Why rolling window + 1-step ahead?
-- Static split = unfair advantage to model trained on recent calm period
-- Rolling refit = mimics real-world deployment
-- 1-step ahead = most practical for daily risk management
-- 20-day refit = balance between adaptation (high) and overfitting (low)
-
-### Forecast Accuracy
-
-| Metric | ARFIMA | GARCH | ARFIMA Wins By |
-|--------|--------|-------|---|
-| **MAE** | 0.004077 | 0.004797 | **15%** ✓ |
-| **RMSE** | 0.004373 | 0.005469 | **20%** ✓ |
-
-**Interpretation:**
-
-- **MAE (Mean Absolute Error):** ARFIMA's forecast errors are 15% smaller on average
-- **RMSE (Root Mean Squared Error):** ARFIMA penalizes large errors less, still 20% better
-
-**Key Finding:** Both models struggled with the volatility spike around day 300
-- Spike was out-of-sample (trained on calmer period)
-- Neither model predicted it perfectly
-- **But:** ARFIMA's long-memory estimate closer to actual spike behavior
-- Shows ARFIMA better captures persistent shocks
-
----
-
-## Value at Risk (VaR) Analysis
-
-### VaR Methodology
-
-Assume portfolio value = **₹100 crore**
-
-**Formula:**
-
-$$\text{VaR}_{\alpha} = \sigma_t \times Z_{\alpha}$$
-
 Where:
-- $\sigma_t$ = forecasted volatility
-- $Z_{\alpha}$ = critical value for confidence level α
+- $\omega$ = constant baseline volatility
+- $\alpha$ = ARCH coefficient (response to recent shocks)
+- $\beta$ = GARCH coefficient (persistence from past volatility)
 
-### 1-Day VaR Estimates (99% Confidence, α = 0.01)
+### Why GARCH?
 
-Current volatility estimate: **0.99%**
+GARCH(1,1) is employed as the comparison baseline given its status as the industry standard for volatility estimation. Fair evaluation of ARFIMA requires benchmarking against the most widely adopted alternative model.
 
-| Confidence | Z-score | ARFIMA VaR | GARCH VaR | Difference |
-|-----------|---------|-----------|-----------|-----------|
-| 90% (10% tail) | 1.28 | ₹1.27 cr | ₹1.29 cr | -0.02 cr |
-| 95% (5% tail) | 1.645 | ₹1.63 cr | ₹1.65 cr | -0.02 cr |
-| **99% (1% tail)** | **2.326** | **₹2.30 cr** | **₹1.89 cr** | **+₹0.41 cr** |
+### GARCH(1,1) Estimation Results
 
-**Key Finding:** ARFIMA's VaR is 18% HIGHER at 99% confidence
-- This is GOOD for risk management
-- ARFIMA predicts larger tail losses
-- More conservative = safer hedging
+| Statistic | Value |
+|-----------|-------|
+| **Log-Likelihood** | 394.29 |
+| **AIC** | -780.58 |
+| **BIC** | -758.77 |
 
-**Decision:** Why is higher VaR better?
-- ARFIMA's long-memory captures persistence of volatility shocks
-- Shocks last 5-10 days (not just 1 day)
-- Higher VaR = accounts for extended shock duration
-- Prevents under-hedging
+| Parameter | Estimate | Std. Error | t-statistic | p-value |
+|-----------|----------|------------|-------------|---------|
+| ω | 0.00118 | 0.00143 | 0.829 | 0.407 |
+| α | 1.0000 | 0.814 | 1.228 | 0.220 |
+| β | 0.0000 | 0.819 | 0.000 | 1.000 |
 
 ---
 
-## Hedging Recommendations
+## In-Sample Model Comparison
 
-### Strategy 1: Protective Puts (Tail Risk Hedge)
+| Metric | ARFIMA(3, 0.1, 0) | GARCH(1,1) | Winner |
+|--------|------------------|-----------|--------|
+| **Log-Likelihood** | 10,173.64 | 394.29 | ✓ ARFIMA |
+| **AIC** | -20,337.27 | -780.58 | ✓ ARFIMA |
+| **BIC** | -20,310.00 | -758.77 | ✓ ARFIMA |
 
-**Implementation:**
-- **Buy:** 1-month ATM (at-the-money) put options on NIFTY 50
-- **Quantity:** Match your ₹100 crore portfolio
-- **Strike:** Current NIFTY 50 level
-- **Cost:** ~1.5% of portfolio (typical option premium)
-- **Payoff:** Floors maximum loss at ₹1.5 crore (premium)
+### Persistence Structure and Model Viability
 
-**Protection Level:**
-- Protects against ₹2.30 crore loss (99% VaR)
-- Net loss capped: ₹1.5 cr (premium cost)
+The GARCH(1,1) estimation yields 
+$$\alpha + \beta = 1.0000$$, 
+implying a unit root and non-stationary volatility dynamics. This result directly contradicts the Augmented Dickey-Fuller test, which confirmed stationarity, and contradicts the ARFIMA fractional integration parameter $d = 0.10$, which ensures mean-reversion. 
 
-**Decision:** Why 1-month puts specifically?
-- ARFIMA shows shocks persist 5-10 days
-- 1-month puts cover entire shock duration
-- Longer puts (3-6 month): Too expensive, overkill
-- Shorter puts (1-2 week): Expire before shock ends
+This pathological result reveals a fundamental incompatibility between GARCH and volatility series exhibiting long-memory structure. GARCH assumes exponential autocorrelation decay suitable for short-memory processes; when applied to long-memory volatility, the model degenerates to a unit root specification.
 
-**Cost-Benefit:**
-- Cost: ₹1.5 crore (1.5% of ₹100 cr)
-- Benefit: Protects against ₹2.30 crore tail loss
-- Ratio: 1.5 cost : 2.30 protection = **1 : 1.53** (favorable)
+Conversely, ARFIMA's fractional differencing correctly captures the hyperbolic decay pattern observed empirically, maintaining stationarity while preserving persistence making it the appropriate framework for medium-term risk management.
 
----
 
-### Strategy 2: Dynamic Hedging (Active Management)
+***ARFIMA(3, 0.1, 0) decisively outperforms GARCH(1,1) across all information criteria (10× higher log-likelihood, lower AIC/BIC), while GARCH's unit root specification contradicts the underlying data's stationarity. ARFIMA's fractional integration parameter correctly captures volatility persistence.***
 
-**Rules:**
+----
+## Rolling Window Out-of-Sample Forecasting
 
-| Volatility Level | Action |
-|------------------|--------|
-| σ < 0.0099 (baseline) | Hold full equity exposure (100%) |
-| σ ∈ [0.0099, 0.0119] (1.0-1.2×) | Monitor, no action |
-| σ ∈ [0.0119, 0.0149] (1.2-1.5×) | **Reduce equity by 10%** |
-| σ > 0.0149 (>1.5×) | **Reduce equity by 20%** |
+### Rolling Window Methodology
 
-**Implementation:**
-1. Monitor daily EWMA volatility
-2. When σ crosses threshold, rebalance portfolio
-3. Hold reduced position for duration of shock (5-10 days typically)
-4. Increase back when volatility normalizes
+A rolling window approach partitions the time series into sequential train-test windows, refitting the model at regular intervals to assess forecast accuracy on unseen data while mimicking real-world deployment conditions. This study employs 1,426 training observations and 300 test observations (focusing on the recent volatility spike period), with model refitting every 20 trading days to balance responsiveness with computational efficiency.
 
-**Decision:** Why these thresholds?
-- 1.2× = meaningful increase, not false alarm
-- 1.5× = severe spike, need protection
-- 10-20% reduction = material risk reduction without abandoning equities
+### Why Rolling Window Validation?
 
-**Rebalancing Frequency:**
-- **ARFIMA recommendation:** WEEKLY rebalancing
-- **Why not daily?** 
-  - Daily cost: 0.02-0.05% of AUM
-  - Daily benefit: 0.01% (not worth it!)
-  - Long-memory means volatility rises gradually (time to respond)
+A static train-test split produced forecasts that remained smooth and flat throughout the test period, failing to capture the pronounced volatility spike around day 280-300. The rolling window approach resolves this limitation by adapting the model to evolving market conditions, allowing both ARFIMA and GARCH to respond to the volatility surge and providing a realistic assessment of each model's forecasting capability during periods of market stress.
 
-**Cost Comparison:**
+#### Static Split (Problem: Flat Forecasts)
 
-| Strategy | Cost | Benefit | Net |
-|----------|------|---------|-----|
-| Protective Puts | 1.5% upfront | Protects 2.3% loss | Good |
-| Dynamic Hedging (weekly) | 0.05%/year | 0.5-1% savings | Good |
-| Daily Rebalancing | 0.3%/year | 0.01% savings | **Bad** |
+  ![Static train-test split showing both models missing the volatility spike](images/g6.png)
 
----
+#### Rolling Window (Solution: Adaptive Forecasts)
 
-## Key Takeaways
+  ![Rolling window forecast comparison: ARFIMA vs GARCH capturing the spike](images/g5.png)
 
-### For Risk Managers
+### Forecast Accuracy Metrics
 
-✓ **Use ARFIMA VaR for daily risk limits**
-- 1% daily loss limit = ₹1.0 crore (99% VaR)
-- Monitor actively for breaches
-- Escalate to senior management if breached
+| Metric | ARFIMA | GARCH | Improvement |
+|--------|--------|-------|-------------|
+| **MAE** | 0.004199 | 0.005547 | **24.3%** ✓ |
+| **RMSE** | 0.004475 | 0.006102 | **26.7%** ✓ |
 
-✓ **Buy protective puts annually**
-- Costs 1.5% but caps tail losses
-- Renew 1 month before expiry
-- Budget as insurance (non-negotiable)
-
-✓ **Rebalance weekly, not daily**
-- ARFIMA shows long-memory (not quick spike)
-- Weekly enough to respond
-- Daily rebalancing wastes costs
-
-✓ **Monitor quarterly for model stability**
-- Re-estimate d every 3 months
-- If d > 0.25: Volatility becoming less mean-reverting (warning!)
-- If d < 0.05: Volatility becoming more random (could switch to GARCH)
-
----
-
-### For Traders
-
-✓ **Use GARCH for intra-day spikes (< 1 day)**
-- High-frequency trading needs quick models
-- GARCH's exponential decay appropriate
-
-✓ **Use ARFIMA for medium-term (3-10 days)**
-- Captures persistence of volatility shocks
-- Better for swing trading
-
-✓ **Long-term (> 10 days): Use ARFIMA with caution**
-- d may change in regime shifts
-- Consider regime-switching models as extension
-
----
-
-### When to Re-estimate
-
-| Trigger | Action | Timeline |
-|---------|--------|----------|
-| Quarterly review | Always re-estimate d | Every 3 months |
-| Market stress | Check if d > 0.5 (non-stationary) | Immediately |
-| Regime shift (e.g., RBI rate hike) | May need new baseline | As detected |
-| Model breach (forecasts consistently wrong) | Debug and re-estimate | Urgent |
-
----
-
-### Limitations to Acknowledge
-
-⚠️ **What ARFIMA CANNOT capture:**
-- Black swan events (5+ sigma moves)
-- Market liquidity crises (bid-ask spreads widen)
-- Regulatory circuit breakers (market halts)
-- Correlation breakdowns (all assets move together)
-- Structural breaks (permanent regime changes)
-
-⚠️ **Assumptions made:**
-- d is constant (actually may vary with regime)
-- Volatility is log-normally distributed (tails have more extreme events)
-- No jumps in volatility (ARFIMA is continuous model)
-
----
-
+----
 ## Conclusion
 
-### The Evidence
+ARFIMA's mean absolute forecast error is 24.3% lower than GARCH, while root mean squared error is 26.7% lower. 
 
-ARFIMA(3, 0.1, 0) **definitively outperforms GARCH(1,1)** for NIFTY 50 volatility:
+These substantial improvements demonstrate ARFIMA's superior ability to predict volatility dynamics, particularly during periods of elevated market stress. 
 
-✓ 10× better log-likelihood (10,173 vs 394)
-✓ Superior information criteria (AIC, BIC)
-✓ 15-20% better out-of-sample forecasts
-✓ More accurate tail risk estimation (18% higher VaR)
-✓ Better captures volatility persistence (d=0.10 vs GARCH unit root)
+The consistent outperformance across both metrics validates ARFIMA's long-memory specification as more appropriate for capturing volatility persistence in equity index data.
 
-### The Recommendation
-
-**Implement ARFIMA-based risk management for NIFTY 50 portfolios:**
-
-1. **Daily:** Monitor against ARFIMA 99% VaR (₹2.3 cr limit)
-2. **Weekly:** Rebalance using dynamic hedging rules
-3. **Annually:** Buy protective puts (1.5% cost, insures tail risk)
-4. **Quarterly:** Re-estimate d, check for regime changes
-
-### The Impact
-
-- **Risk Management:** More accurate tail risk estimates
-- **Cost Efficiency:** Weekly rebalancing vs. daily (save 0.25%/year)
-- **Hedging:** Appropriate protection for 5-10 day shock duration
-- **Decision-Making:** Confidence that model captures true volatility dynamics
-
----
-
-**This research demonstrates that long-memory volatility models are superior to standard GARCH for equity index risk management.**
-
----
-
-*Project completed: June 2026*  
-*Data period: May 2019 - May 2026 (7 years)*  
-*Sample size: 1,727 observations, 1,726 returns*
+----------
