@@ -37,7 +37,7 @@ Daily closing prices for the NIFTY 50 index were obtained using the yfinance Pyt
 
 $$r_t = \log(P_t / P_{t-1})$$
 
-where $P_t$ denotes the closing price at time $t$.
+where $$P_t$$ denotes the closing price at time $$t$$.
 
 ### Why Model Returns Rather Than Index Levels?
 
