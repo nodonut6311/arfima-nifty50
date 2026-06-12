@@ -94,15 +94,15 @@ The recursive EWMA formula is:
 $$\sigma_t^2 = \lambda \sigma_{t-1}^2 + (1-\lambda) r_t^2$$
 
 where:
-- $\sigma_t$ = conditional volatility at time $t$
-- $r_t$ = log return at time $t$
-- $\lambda$ = 0.94 (RiskMetrics standard decay factor)
+- $$\sigma_t$$ = conditional volatility at time $$t$$
+- $$r_t$$ = log return at time $t$
+- $$\lambda$$ = 0.94 (RiskMetrics standard decay factor)
 
 The equivalent non-recursive representation reveals the exponential decay structure:
 
 $$\sigma_t^2 = (1-\lambda) \sum_{i=0}^{\infty} \lambda^i r_{t-i}^2$$
 
-This formulation demonstrates that each historical squared return is weighted by $\lambda^i$, creating exponential decay: recent shocks (small $i$) receive substantial weight, while distant observations (large $i$) decay geometrically. The decay rate $\lambda = 0.94$ ensures that information from approximately 20 trading days ago retains approximately 25% of its original weight.
+This formulation demonstrates that each historical squared return is weighted by $$\lambda^i$$, creating exponential decay: recent shocks (small $$i$$) receive substantial weight, while distant observations (large $$i$$) decay geometrically. The decay rate $$\lambda = 0.94$$ ensures that information from approximately 20 trading days ago retains approximately 25% of its original weight.
 
 ![Plotting Calculated EWMA Volatility](images/g2.png)
 <!--
@@ -172,17 +172,17 @@ A defining characteristic of long-memory processes is the slow, hyperbolic decay
 The Hurst exponent $H$ quantifies the degree of long-range dependence in a time series and serves as a definitive metric for assessing whether long-memory models such as ARFIMA are appropriate.
 
 **Interpretation Guidelines:**
-- $H > 0.5$ implies slowly decaying autocorrelations and long-memory persistence
-- $H = 0.5$ corresponds to short-memory processes (white noise, Brownian motion)
-- $H < 0.5$ indicates anti-persistence (mean-reverting, oscillatory behavior)
+- $$H > 0.5$$ implies slowly decaying autocorrelations and long-memory persistence
+- $$H = 0.5$$ corresponds to short-memory processes (white noise, Brownian motion)
+- $$H < 0.5$$ indicates anti-persistence (mean-reverting, oscillatory behavior)
 
 #### Rescaled Range (R/S) Methodology
 
 The R/S analysis proceeds through the following steps:
 
-1. Select various time window lengths $n$
+1. Select various time window lengths $$n$$
 2. Partition the data into non-overlapping blocks of length $n$
-3. Calculate the ratio $R(n)/S(n)$ for each block, where $R(n)$ is the range and $S(n)$ is the standard deviation
+3. Calculate the ratio $$R(n)/S(n)$$ for each block, where $$R(n)$$ is the range and $$S(n)$$ is the standard deviation
 4. Compute the average $R/S$ ratio across all blocks
 
 This process is repeated for multiple window lengths, yielding an empirical relationship that reveals long-memory structure.
@@ -192,6 +192,7 @@ This process is repeated for multiple window lengths, yielding an empirical rela
 The relationship between rescaled range and window length follows:
 
 $$\frac{R(n)}{S(n)} = C n^{H}$$
+
 $$\log(R/S) = \log C + H \log n$$
 
 where the slope of the regression line equals the Hurst exponent $H$.
@@ -210,20 +211,20 @@ where the slope of the regression line equals the Hurst exponent $H$.
 | Bootstrap Center | 0.6000 |
 | Standard Error | 0.0211 |
 
-**Critical Finding:** The point estimate of $H = 0.9801$ emerged as a statistical outlier, likely reflecting the sensitivity of R/S analysis to lag length selection. Bootstrap resampling (1,000 iterations) revealed that the robust estimate of $H$ centers at approximately 0.60, with 95% confidence interval [0.5459, 0.6282]. Notably, all values within this interval satisfy $H > 0.5$, providing strong evidence of long-memory persistence.
+**Critical Finding:** The point estimate of $$H = 0.9801$$ emerged as a statistical outlier, likely reflecting the sensitivity of R/S analysis to lag length selection. Bootstrap resampling (1,000 iterations) revealed that the robust estimate of $$H$$ centers at approximately 0.60, with 95% confidence interval [0.5459, 0.6282]. Notably, all values within this interval satisfy $$H > 0.5$$, providing strong evidence of long-memory persistence.
 
 ----
 ## Fractional Integration Parameter (d) Estimation for ARFIMA
 
-Using the bootstrap-validated Hurst exponent estimate of $H \approx 0.60$, the fractional integration parameter for ARFIMA is derived through the relationship:
+Using the bootstrap-validated Hurst exponent estimate of $$H \approx 0.60$$, the fractional integration parameter for ARFIMA is derived through the relationship:
 
 $$d = H - 0.5$$
 
 $$d = 0.60 - 0.5 = 0.10$$
 
-This result is highly significant for model specification. The derived parameter $d = 0.10$ satisfies two critical constraints: (1) the stationarity requirement ($d < 0.5$) ensuring mean-reversion properties, and (2) the long-memory condition ($d > 0$) confirming volatility persistence. The bootstrap confidence interval [0.5459, 0.6282] translates to a 95% CI for $d$ of [0.0459, 0.1282], providing additional confidence in the estimate.
+This result is highly significant for model specification. The derived parameter $$d = 0.10$$ satisfies two critical constraints: (1) the stationarity requirement ($$d < 0.5$$) ensuring mean-reversion properties, and (2) the long-memory condition ($$d > 0$$) confirming volatility persistence. The bootstrap confidence interval [0.5459, 0.6282] translates to a 95% CI for $$d$$ of [0.0459, 0.1282], providing additional confidence in the estimate.
 
-This theoretically justified parameter choice supports the ARFIMA(p, 0.1, q) specification for NIFTY 50 volatility. The value $d = 0.10$ ***indicates moderate long-memory persistence: volatility shocks persist for approximately 5-10 trading days before dissipating, a duration substantially longer than GARCH's one-period decay.***
+This theoretically justified parameter choice supports the ARFIMA(p, 0.1, q) specification for NIFTY 50 volatility. The value $$d = 0.10$$ ***indicates moderate long-memory persistence: volatility shocks persist for approximately 5-10 trading days before dissipating, a duration substantially longer than GARCH's one-period decay.***
 
 This finding fundamentally distinguishes ARFIMA from standard exponential-decay models and validates its use for medium-term risk management.
 
@@ -235,24 +236,24 @@ The key innovation of ARFIMA is the **fractional differencing operator**, which 
 $$\left(1-B\right)^d = \sum_{k=0}^{\infty} \binom{d}{k}(-1)^k B^k$$
 
 **Component Breakdown:**
-- $B$ = backshift operator (shifts observations back by one period)
-- $(1-B)$ = first difference operator
-- $(1-B)^d$ = fractional power application, enabling non-integer order of integration
-- Weights decay: $w_k \approx O(k^{d-1})$, exhibiting hyperbolic rather than exponential decay
+- $$B$$ = backshift operator (shifts observations back by one period)
+- $$(1-B)$$ = first difference operator
+- $$(1-B)^d$$ = fractional power application, enabling non-integer order of integration
+- Weights decay: $$w_k \approx O(k^{d-1})$$, exhibiting hyperbolic rather than exponential decay
 
 ---
 
 ### Lag Selection via Information Criteria (AIC and BIC)
 
-The ARFIMA(p, d, q) specification requires selection of AR order $p$ and MA order $q$. This is accomplished through information-theoretic criteria that balance goodness-of-fit against model complexity.
+The ARFIMA(p, d, q) specification requires selection of AR order $$p$$ and MA order $$q$$. This is accomplished through information-theoretic criteria that balance goodness-of-fit against model complexity.
 
-**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $\text{AIC} = -2\log L + 2k$, where $L$ is likelihood and $k$ is parameter count.
+**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $$\text{AIC} = -2\log L + 2k$$, where $L$ is likelihood and $k$ is parameter count.
 
-**Bayesian Information Criterion (BIC)** applies a stricter penalty for additional parameters, incorporating sample size: $\text{BIC} = -2\log L + k\log(n)$, where $n$ is observations. BIC penalizes parametric complexity more heavily than AIC, favoring parsimony.
+**Bayesian Information Criterion (BIC)** applies a stricter penalty for additional parameters, incorporating sample size: $$\text{BIC} = -2\log L + k\log(n)$$, where $$n$$ is observations. BIC penalizes parametric complexity more heavily than AIC, favoring parsimony.
 
 #### Grid Search and Results
 
-A comprehensive grid search over $p, q \in \{0, 1, 2, 3, 4, 5\}$ was conducted, evaluating 36 candidate models. The fractional differencing parameter $d = 0.10$ was held fixed based on the Hurst exponent analysis.
+A comprehensive grid search over $$p, q \in \{0, 1, 2, 3, 4, 5\}$$ was conducted, evaluating 36 candidate models. The fractional differencing parameter $d = 0.10$ was held fixed based on the Hurst exponent analysis.
 
 **Optimal Models Identified:**
 
@@ -293,7 +294,7 @@ $$\sigma_t = 0.0048 + 0.9753\sigma_{t-1} + 0.1146\sigma_{t-2} - 0.1049\sigma_{t-
 #### Parameter Interpretation
 The AR(1) coefficient $\phi_1 = 0.9753$ indicates strong persistence: 97.5% of past volatility carries forward. Combined with the fractional integration parameter $d = 0.10$, this generates the slow ACF decay characteristic of long-memory processes.
 
-The positive AR(2) term $\phi_2 = 0.1146$ captures secondary persistence effects (two-step memory), while the negative AR(3) coefficient $\phi_3 = -0.1049$ introduces oscillatory behavior that prevents overshooting. All parameters are highly significant (p < 0.001), validating the ARFIMA(3, 0.1, 0) specification.
+The positive AR(2) term $$\phi_2 = 0.1146$$ captures secondary persistence effects (two-step memory), while the negative AR(3) coefficient $$\phi_3 = -0.1049$$ introduces oscillatory behavior that prevents overshooting. All parameters are highly significant (p < 0.001), validating the ARFIMA(3, 0.1, 0) specification.
 
 ------
 ## GARCH(1,1)
@@ -303,9 +304,9 @@ The positive AR(2) term $\phi_2 = 0.1146$ captures secondary persistence effects
 $$\sigma_t^2 = \omega + \alpha r_{t-1}^2 + \beta \sigma_{t-1}^2$$
 
 Where:
-- $\omega$ = constant baseline volatility
-- $\alpha$ = ARCH coefficient (response to recent shocks)
-- $\beta$ = GARCH coefficient (persistence from past volatility)
+- $$\omega$$ = constant baseline volatility
+- $$\alpha$$ = ARCH coefficient (response to recent shocks)
+- $$\beta$$ = GARCH coefficient (persistence from past volatility)
 
 ### Why GARCH?
 
@@ -339,7 +340,7 @@ GARCH(1,1) is employed as the comparison baseline given its status as the indust
 
 The GARCH(1,1) estimation yields 
 $$\alpha + \beta = 1.0000$$, 
-implying a unit root and non-stationary volatility dynamics. This result directly contradicts the Augmented Dickey-Fuller test, which confirmed stationarity, and contradicts the ARFIMA fractional integration parameter $d = 0.10$, which ensures mean-reversion. 
+implying a unit root and non-stationary volatility dynamics. This result directly contradicts the Augmented Dickey-Fuller test, which confirmed stationarity, and contradicts the ARFIMA fractional integration parameter $$d = 0.10$$, which ensures mean-reversion. 
 
 This pathological result reveals a fundamental incompatibility between GARCH and volatility series exhibiting long-memory structure. GARCH assumes exponential autocorrelation decay suitable for short-memory processes; when applied to long-memory volatility, the model degenerates to a unit root specification.
 
