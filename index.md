@@ -105,11 +105,10 @@ $$\sigma_t^2 = (1-\lambda) \sum_{i=0}^{\infty} \lambda^i r_{t-i}^2$$
 This formulation demonstrates that each historical squared return is weighted by $$\lambda^i$$, creating exponential decay: recent shocks (small $$i$$) receive substantial weight, while distant observations (large $$i$$) decay geometrically. The decay rate $$\lambda = 0.94$$ ensures that information from approximately 20 trading days ago retains approximately 25% of its original weight.
 
 ![Plotting Calculated EWMA Volatility](images/g2.png)
-<!--
+
 ### Rationale for EWMA Selection
 
-The EWMA specification addresses the competing objectives of noise reduction and information preservation. By assigning weights that decay exponentially, it captures volatility clustering (periods of high volatility tend to follow periods of high volatility) while remaining computationally efficient relative to more complex specifications. The RiskMetrics standard of $\lambda = 0.94$ has been extensively validated in practice and represents a parsimonious choice that balances responsiveness to recent shocks with stability.
--->
+The EWMA specification addresses the competing objectives of noise reduction and information preservation. By assigning weights that decay exponentially, it captures volatility clustering (periods of high volatility tend to follow periods of high volatility) while remaining computationally efficient relative to more complex specifications. The RiskMetrics standard of $$\lambda = 0.94$$ has been extensively validated in practice and represents a parsimonious choice that balances responsiveness to recent shocks with stability.
 
 ***EWMA volatility estimates for the NIFTY 50 sample period range from ***0.44% to 4.88%*** on a daily basis, with notable spikes coinciding with periods of market stress (notably March-May 2020 during the COVID-19 pandemic).***
 
@@ -169,7 +168,7 @@ A defining characteristic of long-memory processes is the slow, hyperbolic decay
 
 ### Hurst Exponent via Rescaled Range (R/S) Analysis
 
-The Hurst exponent $H$ quantifies the degree of long-range dependence in a time series and serves as a definitive metric for assessing whether long-memory models such as ARFIMA are appropriate.
+The Hurst exponent $$H$$ quantifies the degree of long-range dependence in a time series and serves as a definitive metric for assessing whether long-memory models such as ARFIMA are appropriate.
 
 **Interpretation Guidelines:**
 - $$H > 0.5$$ implies slowly decaying autocorrelations and long-memory persistence
@@ -181,9 +180,9 @@ The Hurst exponent $H$ quantifies the degree of long-range dependence in a time 
 The R/S analysis proceeds through the following steps:
 
 1. Select various time window lengths $$n$$
-2. Partition the data into non-overlapping blocks of length $n$
+2. Partition the data into non-overlapping blocks of length $$n$$
 3. Calculate the ratio $$R(n)/S(n)$$ for each block, where $$R(n)$$ is the range and $$S(n)$$ is the standard deviation
-4. Compute the average $R/S$ ratio across all blocks
+4. Compute the average $$R/S$$ ratio across all blocks
 
 This process is repeated for multiple window lengths, yielding an empirical relationship that reveals long-memory structure.
 
@@ -195,7 +194,7 @@ $$\frac{R(n)}{S(n)} = C n^{H}$$
 
 $$\log(R/S) = \log C + H \log n$$
 
-where the slope of the regression line equals the Hurst exponent $H$.
+where the slope of the regression line equals the Hurst exponent $$H$$.
 
 #### R/S Analysis Plot
 
@@ -247,13 +246,13 @@ $$\left(1-B\right)^d = \sum_{k=0}^{\infty} \binom{d}{k}(-1)^k B^k$$
 
 The ARFIMA(p, d, q) specification requires selection of AR order $$p$$ and MA order $$q$$. This is accomplished through information-theoretic criteria that balance goodness-of-fit against model complexity.
 
-**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $$\text{AIC} = -2\log L + 2k$$, where $L$ is likelihood and $k$ is parameter count.
+**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $$\text{AIC} = -2\log L + 2k$$, where $L$ is likelihood and $$k$$ is parameter count.
 
 **Bayesian Information Criterion (BIC)** applies a stricter penalty for additional parameters, incorporating sample size: $$\text{BIC} = -2\log L + k\log(n)$$, where $$n$$ is observations. BIC penalizes parametric complexity more heavily than AIC, favoring parsimony.
 
 #### Grid Search and Results
 
-A comprehensive grid search over $$p, q \in \{0, 1, 2, 3, 4, 5\}$$ was conducted, evaluating 36 candidate models. The fractional differencing parameter $d = 0.10$ was held fixed based on the Hurst exponent analysis.
+A comprehensive grid search over $$p, q \in \{0, 1, 2, 3, 4, 5\}$$ was conducted, evaluating 36 candidate models. The fractional differencing parameter $$d = 0.10$$ was held fixed based on the Hurst exponent analysis.
 
 **Optimal Models Identified:**
 
@@ -292,7 +291,7 @@ $$\sigma_t = 0.0048 + 0.9753\sigma_{t-1} + 0.1146\sigma_{t-2} - 0.1049\sigma_{t-
 | AR(3) $\phi_3$ | -0.10487 | 0.00776 | -13.53 | 0.000 | ✓ |
 
 #### Parameter Interpretation
-The AR(1) coefficient $\phi_1 = 0.9753$ indicates strong persistence: 97.5% of past volatility carries forward. Combined with the fractional integration parameter $d = 0.10$, this generates the slow ACF decay characteristic of long-memory processes.
+The AR(1) coefficient $$\phi_1 = 0.9753$$ indicates strong persistence: 97.5% of past volatility carries forward. Combined with the fractional integration parameter $$d = 0.10$$, this generates the slow ACF decay characteristic of long-memory processes.
 
 The positive AR(2) term $$\phi_2 = 0.1146$$ captures secondary persistence effects (two-step memory), while the negative AR(3) coefficient $$\phi_3 = -0.1049$$ introduces oscillatory behavior that prevents overshooting. All parameters are highly significant (p < 0.001), validating the ARFIMA(3, 0.1, 0) specification.
 
