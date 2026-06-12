@@ -110,7 +110,7 @@ This formulation demonstrates that each historical squared return is weighted by
 
 The EWMA specification addresses the competing objectives of noise reduction and information preservation. By assigning weights that decay exponentially, it captures volatility clustering (periods of high volatility tend to follow periods of high volatility) while remaining computationally efficient relative to more complex specifications. The RiskMetrics standard of $$\lambda = 0.94$$ has been extensively validated in practice and represents a parsimonious choice that balances responsiveness to recent shocks with stability.
 
-***EWMA volatility estimates for the NIFTY 50 sample period range from ***0.44% to 4.88%*** on a daily basis, with notable spikes coinciding with periods of market stress (notably March-May 2020 during the COVID-19 pandemic).***
+***EWMA volatility estimates for the NIFTY 50 sample period range from 0.44% to 4.88% on a daily basis, with notable spikes coinciding with periods of market stress (notably March-May 2020 during the COVID-19 pandemic).***
 
 ----
 ## Testing for Stationarity and Long Memory
@@ -246,7 +246,7 @@ $$\left(1-B\right)^d = \sum_{k=0}^{\infty} \binom{d}{k}(-1)^k B^k$$
 
 The ARFIMA(p, d, q) specification requires selection of AR order $$p$$ and MA order $$q$$. This is accomplished through information-theoretic criteria that balance goodness-of-fit against model complexity.
 
-**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $$\text{AIC} = -2\log L + 2k$$, where $L$ is likelihood and $$k$$ is parameter count.
+**Akaike Information Criterion (AIC)** measures model fit while penalizing the number of parameters, favoring models with lower values: $$\text{AIC} = -2\log L + 2k$$, where $$L$$ is likelihood and $$k$$ is parameter count.
 
 **Bayesian Information Criterion (BIC)** applies a stricter penalty for additional parameters, incorporating sample size: $$\text{BIC} = -2\log L + k\log(n)$$, where $$n$$ is observations. BIC penalizes parametric complexity more heavily than AIC, favoring parsimony.
 
@@ -267,7 +267,7 @@ The ARIMA(3, 0, 0) specification was selected based on the BIC criterion. While 
 
 #### Implementation: Fractional Differencing
 
-Lag selection was performed by applying fractional differencing to the EWMA volatility series prior to ARMA parameter estimation. This approach was necessary as mainstream Python libraries (e.g., statsmodels) lack native support for fractional $d$ parameter estimation in ARFIMA models. The fractional differencing transformation is:
+Lag selection was performed by applying fractional differencing to the EWMA volatility series prior to ARMA parameter estimation. This approach was necessary as mainstream Python libraries (e.g., statsmodels) lack native support for fractional $$d$$ parameter estimation in ARFIMA models. The fractional differencing transformation is:
 
 $$\left(1-B\right)^{0.1} \sigma_t = \sigma_t - 0.1\sigma_{t-1} + \frac{0.1 \times (-0.9)}{2}\sigma_{t-2} - \frac{0.1 \times (-0.9) \times (-1.9)}{6}\sigma_{t-3} + \cdots$$
 
