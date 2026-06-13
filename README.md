@@ -32,10 +32,6 @@ Key Finding: ARFIMA(3, 0.1, 0) outperforms GARCH(1,1) across 4 independent metri
 
 ## Key Visualizations
 
-### Return Distribution and Non-Normality
-
-![NIFTY 50 Returns with KDE overlay showing fat tails](images/g1.png)
-
 ### ACF/PACF: Evidence of Long-Memory
 
 ![ACF and PACF plots showing 60/60 significant lags](images/g3.png)
@@ -52,24 +48,6 @@ Key Finding: ARFIMA(3, 0.1, 0) outperforms GARCH(1,1) across 4 independent metri
 
 ![Rolling window forecasts capturing spike, ARFIMA superior](images/g5.png)
 
----
-
-## Full Report
-
-[Read the Complete Research Report on GitHub Pages](https://YOUR_USERNAME.github.io/arfima-nifty50/)
-
-The full report includes:
-- Executive Summary and Key Findings
-- Data Description and Volatility Estimation (EWMA)
-- Stationarity and Long-Memory Testing (ADF, ACF, Hurst)
-- ARFIMA Model Specification and Lag Selection
-- GARCH Specification and Comparison
-- Out-of-Sample Forecasting Results
-- Value at Risk (VaR) Analysis
-- Hedging Recommendations and Risk Management Strategy
-- Conclusions and Implementation Guidance
-
----
 
 ## Methodology
 
@@ -98,43 +76,6 @@ Issue: α + β = 1.0 (unit root, contradicting stationarity)
 
 ---
 
-## Key Insights
-
-### Why ARFIMA Wins
-
-1. Long-Memory Capture: Fractional integration (d=0.10) captures volatility persistence; GARCH's exponential decay is insufficient
-2. Stationarity: ARFIMA maintains mean-reversion; GARCH degenerates to unit root
-3. Empirical Validation: ACF shows hyperbolic (not exponential) decay, ARFIMA appropriate
-4. Forecast Accuracy: 24-27% better out-of-sample predictions during volatility spikes
-
-### When to Use Each Model
-
-| Use Case | Recommended |
-|----------|-------------|
-| Intra-day trading (less than 1 day) | GARCH |
-| Medium-term forecasting (3-10 days) | ARFIMA |
-| Risk management and hedging | ARFIMA |
-| Tail risk estimation (VaR) | ARFIMA |
-
----
-
-## Practical Recommendations
-
-### For Risk Managers
-
-1. Daily Risk Limit: Use ARFIMA 99% VaR (2.30 crores for 100 crore portfolio)
-2. Hedging: Buy 1-month protective puts (costs 1.5%, protects 2.3% loss)
-3. Rebalancing: Weekly (not daily) based on volatility thresholds
-4. Monitoring: Re-estimate ARFIMA quarterly to verify d stability
-
-### For Traders
-
-1. Short-term: Use GARCH for intra-day spikes
-2. Medium-term: Use ARFIMA for 3-10 day forecasts
-3. Long-term: Use ARFIMA with caution (d may shift in regime changes)
-
----
-
 ## Technical Stack
 
 - Language: Python 3.12
@@ -147,3 +88,37 @@ Issue: α + β = 1.0 (unit root, contradicting stationarity)
 ---
 
 ## Repository Structure
+arfima-nifty50/
+
+├── index.md                 # Full research report (GitHub Pages)
+├── README.md               # This file
+├── images/
+│   ├── g1.png             # Returns histogram with KDE
+│   ├── g3.png             # ACF/PACF plots
+│   ├── g4.png             # Hurst exponent R/S analysis
+│   ├── g5.png             # Rolling window forecast (solution)
+│   ├── g6.png             # Static forecast (problem)
+└── arfima_analysis.ipynb    # Full analysis code 
+
+---
+## Citation
+
+If you use this research, please cite:
+ARFIMA vs GARCH: Volatility Modeling for NIFTY 50
+
+GitHub Repository: https://github.com/nodonut6311/arfima-nifty50
+
+Published: June 2026
+
+---
+
+## Contact and Questions
+
+For questions or discussions about this research:
+- Open an issue on GitHub
+- Review the full report on GitHub Pages
+
+---
+
+Last Updated: June 2026
+Status: Complete Research Project
