@@ -87,7 +87,7 @@ Issue: α + β = 1.0 (unit root, contradicting stationarity)
 
 ---
 ## Repository Structure
-
+```
 arfima-nifty50/
 ├── index.md                 # Full research report (GitHub Pages)
 ├── README.md               # Project overview and quick reference
@@ -98,7 +98,8 @@ arfima-nifty50/
 │   ├── g5.png             # Rolling window forecast (solution)
 │   ├── g6.png             # Static forecast (problem)
 │   └── ...
-└── arfima_analysis.ipynb    # Full analysis code 
+└── arfima_analysis.ipynb    # Full analysis code
+```
 ----
 ## Citation
 
