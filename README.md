@@ -86,21 +86,20 @@ Issue: α + β = 1.0 (unit root, contradicting stationarity)
 - GitHub Pages: Jekyll with MathJax for LaTeX rendering
 
 ---
-
 ## Repository Structure
-arfima-nifty50/
 
+arfima-nifty50/
 ├── index.md                 # Full research report (GitHub Pages)
-├── README.md               # This file
+├── README.md               # Project overview and quick reference
 ├── images/
 │   ├── g1.png             # Returns histogram with KDE
 │   ├── g3.png             # ACF/PACF plots
 │   ├── g4.png             # Hurst exponent R/S analysis
 │   ├── g5.png             # Rolling window forecast (solution)
 │   ├── g6.png             # Static forecast (problem)
+│   └── ...
 └── arfima_analysis.ipynb    # Full analysis code 
-
----
+----
 ## Citation
 
 If you use this research, please cite:
