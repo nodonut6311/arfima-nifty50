@@ -95,7 +95,7 @@ $$\sigma_t^2 = \lambda \sigma_{t-1}^2 + (1-\lambda) r_t^2$$
 
 where:
 - $$\sigma_t$$ = conditional volatility at time $$t$$
-- $$r_t$$ = log return at time $t$
+- $$r_t$$ = log return at time $$t$$
 - $$\lambda$$ = 0.94 (RiskMetrics standard decay factor)
 
 The equivalent non-recursive representation reveals the exponential decay structure:
@@ -286,9 +286,9 @@ $$\sigma_t = 0.0048 + 0.9753\sigma_{t-1} + 0.1146\sigma_{t-2} - 0.1049\sigma_{t-
 | Parameter | Estimate | Std. Error | t-statistic | p-value | Significance |
 |-----------|----------|------------|-------------|---------|---|
 | Constant | 0.00476 | 0.00142 | 3.36 | 0.001 | ✓ |
-| AR(1) $\phi_1$ | 0.97534 | 0.01108 | 88.01 | 0.000 | ✓ |
-| AR(2) $\phi_2$ | 0.11462 | 0.01142 | 10.04 | 0.000 | ✓ |
-| AR(3) $\phi_3$ | -0.10487 | 0.00776 | -13.53 | 0.000 | ✓ |
+| AR(1) $$\phi_1$$ | 0.97534 | 0.01108 | 88.01 | 0.000 | ✓ |
+| AR(2) $$\phi_2$$ | 0.11462 | 0.01142 | 10.04 | 0.000 | ✓ |
+| AR(3) $$\phi_3$$ | -0.10487 | 0.00776 | -13.53 | 0.000 | ✓ |
 
 #### Parameter Interpretation
 The AR(1) coefficient $$\phi_1 = 0.9753$$ indicates strong persistence: 97.5% of past volatility carries forward. Combined with the fractional integration parameter $$d = 0.10$$, this generates the slow ACF decay characteristic of long-memory processes.
